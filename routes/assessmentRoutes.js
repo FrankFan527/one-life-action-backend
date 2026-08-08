@@ -11,4 +11,6 @@ router.post("/health-context", getHealthContext);
 
 router.post("/meal-assessment", createMealAssessment);
 
+router.get("/dishes", getDishes);
+
 module.exports = router;
