@@ -2,20 +2,6 @@
 
 Backend service for the FIT5120 project, built with Node.js and Express.
 
-## Project Structure
-
-backend/
-├── controllers/
-│   └── recommendationController.js
-├── data/
-│   └── sampleData.js
-├── routes/
-│   └── recommendation.js
-├── server.js
-├── package.json
-├── package-lock.json
-└── .gitignore
-
 ## Architecture
 
 The backend currently follows this workflow:
@@ -23,20 +9,8 @@ The backend currently follows this workflow:
 Frontend
 → API Route
 → Controller
-→ Mock Data
-→ JSON Response
-
-At the current development stage, mock data is used for API testing.
-
-The planned workflow is:
-
-Frontend
-→ API Route
-→ Controller
 → Database
 → JSON Response
-
-Once the database is ready, the mock data will be replaced by database queries while keeping the API contract consistent.
 
 ## Current API
 
