@@ -5,6 +5,10 @@ const {
     createMealAssessment
 } = require("../controllers/assessmentController");
 
+const {
+    getDishes
+} = require("../controllers/dishController");
+
 const router = express.Router();
 
 router.post("/health-context", getHealthContext);

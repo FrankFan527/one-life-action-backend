@@ -1,10 +1,9 @@
 const dishService = require("../services/dishService");
 
-const getDishes = (req, res) => {
-
+const getDishes = async (req, res) => {
     try {
 
-        const dishes = dishService.getAllDishes();
+        const dishes = await dishService.getAllDishes();
 
         return res.status(200).json({
             success: true,
@@ -12,6 +11,8 @@ const getDishes = (req, res) => {
         });
 
     } catch (error) {
+
+        console.error("Get dishes error:", error);
 
         return res.status(500).json({
             success: false,
