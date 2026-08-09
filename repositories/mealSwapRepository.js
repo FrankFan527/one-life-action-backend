@@ -1,7 +1,7 @@
 const pool =
     require("../config/database");
 
-async function findApprovedSwap(
+async function findApprovedSwaps(
     originalDishId,
     nutrient
 ) {
@@ -23,7 +23,7 @@ async function findApprovedSwap(
             WHERE from_dish_id = ?
               AND nutrient_reduced = ?
             ORDER BY swap_id
-            LIMIT 1
+            LIMIT 3
             `,
             [
                 originalDishId,
@@ -31,9 +31,9 @@ async function findApprovedSwap(
             ]
         );
 
-    return rows[0] || null;
+    return rows;
 }
 
 module.exports = {
-    findApprovedSwap
+    findApprovedSwaps
 };
