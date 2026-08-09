@@ -1,6 +1,5 @@
 const dishRepository = require("../repositories/dishRepository");
 
-
 async function getAllDishes() {
 
     const dishes = await dishRepository.getAllDishes();
@@ -17,7 +16,6 @@ async function getAllDishes() {
         sodiumMg: Number(dish.sodium_mg)
     }));
 }
-
 
 async function getDishById(dishId) {
 
@@ -43,7 +41,6 @@ async function getDishById(dishId) {
         sodiumMg: Number(dish.sodium_mg)
     };
 }
-
 
 module.exports = {
     getAllDishes,

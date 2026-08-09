@@ -37,6 +37,7 @@ function validateMeals(meals) {
     }
 }
 
+// Calculate total nutrients from selected meals.
 function calculateTotals(selectedMeals) {
 
     return selectedMeals.reduce(
@@ -107,6 +108,7 @@ function mapGuidelines(rows) {
     return guidelines;
 }
 
+// Compare nutrient totals with guidelines
 function compareWithGuidelines(totals, guidelines) {
 
     const nutrientAnalysis = {};
@@ -136,6 +138,7 @@ function compareWithGuidelines(totals, guidelines) {
     return nutrientAnalysis;
 }
 
+// Find the nutrient with the highest exceedance ratio.
 function findPriorityNutrient(
     nutrientAnalysis
 ) {
@@ -174,6 +177,7 @@ function findPriorityNutrient(
     };
 }
 
+// Main function for analysing the selected meals and compare them with nutritional guidelines.
 async function analyseMeals(meals) {
 
     validateMeals(meals);
