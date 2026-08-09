@@ -2,20 +2,6 @@
 
 Backend service for the FIT5120 project, built with Node.js and Express.
 
-## Project Structure
-
-backend/
-├── controllers/
-│   └── recommendationController.js
-├── data/
-│   └── sampleData.js
-├── routes/
-│   └── recommendation.js
-├── server.js
-├── package.json
-├── package-lock.json
-└── .gitignore
-
 ## Architecture
 
 The backend currently follows this workflow:
@@ -23,20 +9,8 @@ The backend currently follows this workflow:
 Frontend
 → API Route
 → Controller
-→ Mock Data
-→ JSON Response
-
-At the current development stage, mock data is used for API testing.
-
-The planned workflow is:
-
-Frontend
-→ API Route
-→ Controller
 → Database
 → JSON Response
-
-Once the database is ready, the mock data will be replaced by database queries while keeping the API contract consistent.
 
 ## Current API
 
@@ -45,21 +19,83 @@ Once the database is ready, the mock data will be replaced by database queries w
 Example request:
 
 {
-  "age": 45,
-  "bmi": 27,
-  "smoking": false
+  "ageBand": "45-54",
+  "heightCm": 170,
+  "weightKg": 78,
+  "meals": {
+    "breakfast": 4,
+    "lunch": 12,
+    "tea": 18,
+    "dinner": 25
+  }
 }
 
 Example response:
 
 {
   "success": true,
-  "riskLevel": "medium",
-  "recommendations": [
-    "Exercise for at least 150 minutes per week",
-    "Reduce sugar and salt intake",
-    "Monitor blood pressure regularly"
-  ]
+
+  "healthContext": {
+    "bmi": 26.99,
+    "bmiCategory": "Overweight",
+    "bmiDisclaimer": "BMI is a screening indicator and not a medical diagnosis."
+  },
+
+  "mortalityContext": {
+    "ageBand": "45-54",
+    "leadingCauses": [],
+    "source": "DOSM",
+    "reportingPeriod": "..."
+  },
+
+  "dailyAnalysis": {
+    "totals": {
+      "energyKcal": 2150,
+      "sugarG": 68,
+      "saturatedFatG": 24,
+      "sodiumMg": 2800
+    },
+
+    "nutrients": {
+      "sugar": {
+        "guideline": 25,
+        "ratio": 2.72,
+        "exceeded": true
+      },
+      "sodium": {
+        "guideline": 2000,
+        "ratio": 1.4,
+        "exceeded": true
+      },
+      "saturatedFat": {
+        "guideline": 20,
+        "ratio": 1.2,
+        "exceeded": true
+      }
+    }
+  },
+
+  "priority": {
+    "nutrient": "sugar",
+    "ratio": 2.72,
+    "healthExplanation": "..."
+  },
+
+  "recommendation": {
+    "originalDish": {},
+    "replacementDish": {},
+    "priorityNutrient": "sugar",
+    "reason": "...",
+    "explanation": "..."
+  },
+
+  "impact": {
+    "originalTotal": 68,
+    "revisedTotal": 45,
+    "absoluteReduction": 23,
+    "percentageReduction": 33.82,
+    "withinGuideline": false
+  }
 }
 
 Note: The current recommendation logic and data are for development and integration testing only.
