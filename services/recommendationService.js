@@ -58,17 +58,31 @@ async function findApprovedSwaps(
     const dbNutrient =
         DB_NUTRIENT_MAP[nutrientKey];
 
+    console.log("Swap lookup:", {
+        originalDishId,
+        nutrientKey,
+        dbNutrient
+    });
+
     if (!dbNutrient) {
         throw new Error(
             `Unsupported nutrient: ${nutrientKey}`
         );
     }
 
-    return mealSwapRepository
-        .findApprovedSwaps(
-            originalDishId,
-            dbNutrient
-        );
+    const swaps =
+        await mealSwapRepository
+            .findApprovedSwaps(
+                originalDishId,
+                dbNutrient
+            );
+
+    console.log(
+        "Approved swaps returned:",
+        swaps
+    );
+
+    return swaps;
 }
 
 // Get the health relationship for a specific nutrient.
@@ -127,6 +141,8 @@ async function getRecommendation(nutrientResult) {
             nutrientKey
         );
 
+    console.log("Found swaps:", swaps);
+
     const healthRelationship =
         await getNutrientCondition(
             nutrientKey
@@ -171,10 +187,7 @@ async function getRecommendation(nutrientResult) {
     for (const swap of swaps) {
 
         // Skip swaps that do not have a valid replacement dish.
-        if (
-            swap.to_dish_id === null ||
-            swap.to_dish_id === undefined
-        ) {
+        if (!swap.to_dish_id) {
             continue;
         }
 
@@ -346,6 +359,8 @@ async function getRecommendation(nutrientResult) {
                 "No validated swap with a measurable nutrient reduction is currently available."
         };
     }
+
+    console.log("Final recommendations:", recommendations);
 
     return {
         recommendationRequired: true,
