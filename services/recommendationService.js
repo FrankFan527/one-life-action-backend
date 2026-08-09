@@ -15,14 +15,13 @@ const {
     calculateTotals
 } = require("./nutrientService");
 
-
 const DB_NUTRIENT_MAP = {
     sugarG: "sugar",
     sodiumMg: "sodium",
     saturatedFatG: "sat_fat"
 };
 
-
+// Find the meal that contributes the most to a specific nutrient.
 function findHighestContributingMeal(
     selectedMeals,
     nutrientKey
@@ -50,7 +49,7 @@ function findHighestContributingMeal(
     return highestMeal;
 }
 
-
+// Find an approved meal swap for a specific dish and nutrient.
 async function findApprovedSwap(
     originalDishId,
     nutrientKey
@@ -72,7 +71,7 @@ async function findApprovedSwap(
         );
 }
 
-
+// Get the health relationship for a specific nutrient.
 async function getNutrientCondition(
     nutrientKey
 ) {
@@ -90,7 +89,7 @@ async function getNutrientCondition(
         .getByNutrient(dbNutrient);
 }
 
-
+// Generate a meal swap recommendation based on the selected meals and nutrient analysis.
 async function getRecommendation(
     meals,
     nutrientResult
@@ -138,7 +137,8 @@ async function getRecommendation(
         await getNutrientCondition(
             nutrientKey
         );
-
+    
+    // If no swap is found, return a recommendation indicating that no validated swap is available.
     if (!swap) {
 
         return {
@@ -175,60 +175,16 @@ async function getRecommendation(
         };
     }
 
-    let replacementDish = null;
-
-    if (swap.to_dish_id) {
-        replacementDish =
-            await dishService.getDishById(
-                swap.to_dish_id
-            );
+    if (
+        swap.to_dish_id === null ||
+        swap.to_dish_id === undefined
+    ) {
+        throw new Error(
+            `Swap ${swap.swap_id} does not have a replacement dish ID.`
+        );
     }
 
-    if (!replacementDish) {
-
-        return {
-            recommendationRequired: true,
-            swapAvailable: true,
-
-            priorityNutrient,
-
-            healthRelationship,
-
-            recommendation: {
-                mealSlot:
-                    highestMeal.slot,
-
-                originalDish: {
-                    dishId:
-                        originalDish.dishId,
-                    name:
-                        originalDish.name
-                },
-
-                replacementDish: {
-                    dishId: null,
-                    name:
-                        swap.to_swap_name
-                },
-
-                reason:
-                    `${originalDish.name} contributes the most ` +
-                    `${priorityNutrient.name.toLowerCase()} ` +
-                    `among the selected meals.`,
-
-                explanation:
-                    swap.explanation,
-
-                approxReduction:
-                    swap.approx_reduction,
-
-                realismLevel:
-                    swap.realism_level
-            },
-
-            revisedTotals: null
-        };
-    }
+    const replacementDish = await dishService.getDishById(swap.to_dish_id);
 
     const revisedMeals =
         nutrientResult
@@ -263,6 +219,13 @@ async function getRecommendation(
         revisedTotals[
             nutrientKey
         ];
+
+    // Protect against invalid swap data.
+    if (revisedTotal >= originalTotal) {
+        throw new Error(
+            `Swap ${swap.swap_id} does not reduce ${priorityNutrient.name}.`
+        );
+    }
 
     const absoluteReduction =
         originalTotal -

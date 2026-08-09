@@ -1,6 +1,5 @@
 const pool = require("../config/database");
 
-
 async function getAllDishes() {
 
     const [rows] = await pool.query(`
@@ -22,7 +21,6 @@ async function getAllDishes() {
 
     return rows;
 }
-
 
 async function getDishById(dishId) {
 
