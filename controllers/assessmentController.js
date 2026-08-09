@@ -67,7 +67,6 @@ const createMealAssessment = async (req, res) => {
         // Generate meal swap recommendation
         const recommendation =
             await recommendationService.getRecommendation(
-                meals,
                 nutrientResult
             );
 

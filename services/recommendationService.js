@@ -49,8 +49,8 @@ function findHighestContributingMeal(
     return highestMeal;
 }
 
-// Find an approved meal swap for a specific dish and nutrient.
-async function findApprovedSwap(
+// Find approved meal swaps for a specific dish and nutrient.
+async function findApprovedSwaps(
     originalDishId,
     nutrientKey
 ) {
@@ -65,7 +65,7 @@ async function findApprovedSwap(
     }
 
     return mealSwapRepository
-        .findApprovedSwap(
+        .findApprovedSwaps(
             originalDishId,
             dbNutrient
         );
@@ -90,22 +90,16 @@ async function getNutrientCondition(
 }
 
 // Generate a meal swap recommendation based on the selected meals and nutrient analysis.
-async function getRecommendation(
-    meals,
-    nutrientResult
-) {
+async function getRecommendation(nutrientResult) {
 
+    // If no nutrient exceeds its guideline, no recommendation is needed.
     if (
         !nutrientResult
             .priorityNutrient
     ) {
         return {
-            recommendationRequired:
-                false,
-
-            swapAvailable:
-                false,
-
+            recommendationRequired: false,
+            swapAvailable: false,
             message:
                 "No assessed nutrient exceeds its guideline value."
         };
@@ -127,8 +121,8 @@ async function getRecommendation(
     const originalDish =
         highestMeal.dish;
 
-    const swap =
-        await findApprovedSwap(
+    const swaps =
+        await findApprovedSwaps(
             originalDish.dishId,
             nutrientKey
         );
@@ -139,14 +133,11 @@ async function getRecommendation(
         );
     
     // If no swap is found, return a recommendation indicating that no validated swap is available.
-    if (!swap) {
+    if (!swaps || swaps.length === 0) {
 
         return {
-            recommendationRequired:
-                true,
-
-            swapAvailable:
-                false,
+            recommendationRequired: true,
+            swapAvailable: false,
 
             priorityNutrient: {
                 key: nutrientKey,
@@ -155,8 +146,7 @@ async function getRecommendation(
                 total:
                     priorityNutrient.total,
                 guideline:
-                    priorityNutrient
-                        .guideline,
+                    priorityNutrient.guideline,
                 ratio:
                     priorityNutrient.ratio
             },
@@ -169,108 +159,96 @@ async function getRecommendation(
             },
 
             healthRelationship,
-
+            recommendations: [],
             message:
                 "No validated swap is currently available for this dish."
         };
     }
 
-    if (
-        swap.to_dish_id === null ||
-        swap.to_dish_id === undefined
-    ) {
-        throw new Error(
-            `Swap ${swap.swap_id} does not have a replacement dish ID.`
-        );
-    }
+    const recommendations = [];
 
-    const replacementDish = await dishService.getDishById(swap.to_dish_id);
+    // For each approved swap, calculate the impact on the nutrient and prepare a recommendation.
+    for (const swap of swaps) {
 
-    const revisedMeals =
-        nutrientResult
-            .selectedMeals
-            .map((meal) => {
+        // Skip swaps that do not have a valid replacement dish.
+        if (
+            swap.to_dish_id === null ||
+            swap.to_dish_id === undefined
+        ) {
+            continue;
+        }
 
-                if (
-                    meal.slot ===
-                    highestMeal.slot
-                ) {
-                    return {
-                        slot:
-                            meal.slot,
-                        dish:
-                            replacementDish
-                    };
+        const replacementDish =
+            await dishService.getDishById(
+                swap.to_dish_id
+            );
+
+        // Replace only the targeted meal
+        const revisedMeals =
+            nutrientResult.selectedMeals.map(
+                (meal) => {
+
+                    if (
+                        meal.slot ===
+                        highestMeal.slot
+                    ) {
+                        return {
+                            slot: meal.slot,
+                            dish: replacementDish
+                        };
+                    }
+
+                    return meal;
                 }
+            );
 
-                return meal;
-            });
 
-    const revisedTotals =
-        calculateTotals(
-            revisedMeals
-        );
+        // Recalculate daily totals
+        const revisedTotals =
+            calculateTotals(
+                revisedMeals
+            );
 
-    const originalTotal =
-        nutrientResult
-            .totals[nutrientKey];
 
-    const revisedTotal =
-        revisedTotals[
-            nutrientKey
-        ];
+        const originalTotal =
+            nutrientResult
+                .totals[nutrientKey];
 
-    // Protect against invalid swap data.
-    if (revisedTotal >= originalTotal) {
-        throw new Error(
-            `Swap ${swap.swap_id} does not reduce ${priorityNutrient.name}.`
-        );
-    }
+        const revisedTotal =
+            revisedTotals[nutrientKey];
 
-    const absoluteReduction =
-        originalTotal -
-        revisedTotal;
 
-    const percentageReduction =
-        originalTotal > 0
-            ? (
-                absoluteReduction /
-                originalTotal
-            ) * 100
-            : 0;
+        const absoluteReduction =
+            originalTotal -
+            revisedTotal;
 
-    const guideline =
-        priorityNutrient
-            .guideline;
 
-    const withinGuideline =
-        revisedTotal <=
-        guideline;
+        // Ignore swaps that make the nutrient worse
+        if (absoluteReduction <= 0) {
+            continue;
+        }
 
-    return {
-        recommendationRequired:
-            true,
 
-        swapAvailable:
-            true,
+        const percentageReduction =
+            originalTotal > 0
+                ? (
+                    absoluteReduction /
+                    originalTotal
+                ) * 100
+                : 0;
 
-        priorityNutrient: {
-            key:
-                nutrientKey,
-            name:
-                priorityNutrient.name,
-            total:
-                originalTotal,
-            guideline,
-            ratio:
-                priorityNutrient.ratio
-        },
 
-        healthRelationship,
+        const guideline =
+            priorityNutrient.guideline;
 
-        recommendation: {
-            swapId:
-                swap.swap_id,
+
+        const withinGuideline =
+            revisedTotal <= guideline;
+
+
+        recommendations.push({
+
+            swapId: swap.swap_id,
 
             mealSlot:
                 highestMeal.slot,
@@ -284,11 +262,9 @@ async function getRecommendation(
 
             replacementDish: {
                 dishId:
-                    replacementDish
-                        .dishId,
+                    replacementDish.dishId,
                 name:
-                    replacementDish
-                        .name
+                    replacementDish.name
             },
 
             reason:
@@ -303,39 +279,90 @@ async function getRecommendation(
                 swap.approx_reduction,
 
             realismLevel:
-                swap.realism_level
+                swap.realism_level,
+
+            impact: {
+                originalTotal,
+                revisedTotal,
+
+                absoluteReduction:
+                    Number(
+                        absoluteReduction
+                            .toFixed(2)
+                    ),
+
+                percentageReduction:
+                    Number(
+                        percentageReduction
+                            .toFixed(1)
+                    ),
+
+                unit:
+                    priorityNutrient.unit,
+
+                guideline,
+
+                withinGuideline,
+
+                status:
+                    withinGuideline
+                        ? "The revised total is within the guideline value."
+                        : "The revised total remains above the guideline, but has been reduced."
+            },
+
+            revisedTotals
+        });
+    }
+
+    // Database swaps existed, but none resulted in a valid reduction for the nutrient.
+    if (recommendations.length === 0) {
+        return {
+            recommendationRequired: true,
+            swapAvailable: false,
+
+            priorityNutrient: {
+                key: nutrientKey,
+                name: priorityNutrient.name,
+                total:
+                    nutrientResult.totals[
+                        nutrientKey
+                    ],
+                guideline:
+                    priorityNutrient.guideline,
+                ratio:
+                    priorityNutrient.ratio
+            },
+
+            highestContributingMeal: {
+                slot: highestMeal.slot,
+                dish: originalDish
+            },
+
+            healthRelationship,
+
+            recommendations: [],
+
+            message:
+                "No validated swap with a measurable nutrient reduction is currently available."
+        };
+    }
+
+    return {
+        recommendationRequired: true,
+
+        swapAvailable: true,
+
+        priorityNutrient: {
+            key: nutrientKey,
+            name: priorityNutrient.name,
+            total: nutrientResult.totals[nutrientKey],
+            guideline: priorityNutrient.guideline,
+            ratio: priorityNutrient.ratio
         },
 
-        impact: {
-            originalTotal,
-            revisedTotal,
+        healthRelationship,
 
-            absoluteReduction:
-                Number(
-                    absoluteReduction
-                        .toFixed(2)
-                ),
-
-            percentageReduction:
-                Number(
-                    percentageReduction
-                        .toFixed(1)
-                ),
-
-            unit:
-                priorityNutrient.unit,
-
-            guideline,
-
-            withinGuideline,
-
-            status:
-                withinGuideline
-                    ? "The revised total is within the guideline value."
-                    : "The revised total remains above the guideline, but has been reduced."
-        },
-
-        revisedTotals
+        recommendations
     };
 }
 
@@ -343,6 +370,6 @@ async function getRecommendation(
 module.exports = {
     getRecommendation,
     findHighestContributingMeal,
-    findApprovedSwap,
+    findApprovedSwaps,
     getNutrientCondition
 };
