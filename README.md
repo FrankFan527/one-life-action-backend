@@ -1,104 +1,45 @@
-# FIT5120 Backend
+# one-life-action-backend
 
-Backend service for the FIT5120 project, built with Node.js and Express.
+Backend service for the FIT5120 One Life Action project, built with Node.js and Express.
 
-## Architecture
+## Tech Stack
 
-The backend currently follows this workflow:
+- Node.js
+- Express.js
+- MySQL
+- REST API
 
-Frontend
-→ API Route
-→ Controller
-→ Database
-→ JSON Response
+## Project Structure
 
-## Current API
-
-### POST /recommendation
-
-Example request:
-
-{
-  "ageBand": "45-54",
-  "heightCm": 170,
-  "weightKg": 78,
-  "meals": {
-    "breakfast": 4,
-    "lunch": 12,
-    "tea": 18,
-    "dinner": 25
-  }
-}
-
-Example response:
-
-{
-  "success": true,
-
-  "healthContext": {
-    "bmi": 26.99,
-    "bmiCategory": "Overweight",
-    "bmiDisclaimer": "BMI is a screening indicator and not a medical diagnosis."
-  },
-
-  "mortalityContext": {
-    "ageBand": "45-54",
-    "leadingCauses": [],
-    "source": "DOSM",
-    "reportingPeriod": "..."
-  },
-
-  "dailyAnalysis": {
-    "totals": {
-      "energyKcal": 2150,
-      "sugarG": 68,
-      "saturatedFatG": 24,
-      "sodiumMg": 2800
-    },
-
-    "nutrients": {
-      "sugar": {
-        "guideline": 25,
-        "ratio": 2.72,
-        "exceeded": true
-      },
-      "sodium": {
-        "guideline": 2000,
-        "ratio": 1.4,
-        "exceeded": true
-      },
-      "saturatedFat": {
-        "guideline": 20,
-        "ratio": 1.2,
-        "exceeded": true
-      }
-    }
-  },
-
-  "priority": {
-    "nutrient": "sugar",
-    "ratio": 2.72,
-    "healthExplanation": "..."
-  },
-
-  "recommendation": {
-    "originalDish": {},
-    "replacementDish": {},
-    "priorityNutrient": "sugar",
-    "reason": "...",
-    "explanation": "..."
-  },
-
-  "impact": {
-    "originalTotal": 68,
-    "revisedTotal": 45,
-    "absoluteReduction": 23,
-    "percentageReduction": 33.82,
-    "withinGuideline": false
-  }
-}
-
-Note: The current recommendation logic and data are for development and integration testing only.
+```backend/
+ ├── certificates/
+ │   └── ca.pem
+ ├── config/
+ │   └── database.js
+ ├── controllers/
+ │   ├── assessmentController.js
+ │   └── dishController.js
+ ├── data/
+ │   └── sampleData.js
+ ├── repositories/
+ │   ├── dishRepository.js
+ │   ├── guidelineRepository.js
+ │   ├── mealSwapRepository.js
+ │   ├── mortalityRepository.js
+ │   └── nutrientConditionRepository.js
+ ├── routes/
+ │   └── assessmentRoutes.js
+ ├── services/
+ │   ├── bmiService.js
+ │   ├── dishService.js
+ │   ├── mortalityService.js
+ │   ├── nutrientService.js
+ │   └── recommendationService.js
+ ├── .gitignore
+ ├── package.json
+ ├── package-lock.json
+ └── server.js
+```
 
 ## Getting Started
 
@@ -114,21 +55,22 @@ npm install
 
 npm start
 
-The server will run at:
+## Main Features
 
-http://localhost:3000
+- BMI calculation
+- Nutrient recommendations
+- Dish recommendations
+- Meal swap suggestions
+- Mortality-related assessment
+- Dietary guideline retrieval
 
-## Development Status
+## Project Architecture
 
-Current:
-- Backend project structure established
-- Express server configured
-- Recommendation API prototype created
-- Mock data available for frontend integration
+The backend follows a layered structure:
 
-Next:
-- Finalise API requirements with frontend
-- Connect the database
-- Implement the final recommendation logic
-- Add input validation and error handling
-- Prepare for deployment
+Routes → Controllers → Services → Repositories → Database
+
+- **Routes** define API endpoints.
+- **Controllers** handle HTTP requests and responses.
+- **Services** contain business logic.
+- **Repositories** handle database access.
