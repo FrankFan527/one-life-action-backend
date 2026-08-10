@@ -17,22 +17,24 @@ const NUTRIENT_PRIORITY = [
     "saturatedFatG"
 ];
 
+// Validate at least two meals are selected and the meals object is valid.
 function validateMeals(meals) {
 
-    if (!meals || typeof meals !== "object") {
+    if (!meals || typeof meals !== "object" || Array.isArray(meals)) {
         throw new Error("Meals are required.");
     }
 
-    const missingSlots = MEAL_ORDER.filter(
-        (slot) =>
-            meals[slot] === undefined ||
-            meals[slot] === null ||
-            meals[slot] === ""
-    );
+     const selectedSlots =
+        MEAL_ORDER.filter(
+            (slot) =>
+                meals[slot] !== undefined &&
+                meals[slot] !== null &&
+                meals[slot] !== ""
+        );
 
-    if (missingSlots.length > 0) {
+    if (selectedSlots.length < 2) {
         throw new Error(
-            `Missing meal selections: ${missingSlots.join(", ")}`
+            "At least two meals must be selected."
         );
     }
 }
@@ -185,6 +187,14 @@ async function analyseMeals(meals) {
     const selectedMeals = [];
 
     for (const slot of MEAL_ORDER) {
+
+        if (
+            meals[slot] === undefined ||
+            meals[slot] === null ||
+            meals[slot] === ""
+        ) {
+            continue;
+        }
 
         const dish =
             await dishService.getDishById(

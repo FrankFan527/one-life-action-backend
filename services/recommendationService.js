@@ -27,21 +27,26 @@ function findHighestContributingMeal(
     nutrientKey
 ) {
 
+    if (
+        !Array.isArray(selectedMeals) ||
+        selectedMeals.length === 0
+    ) {
+        throw new Error(
+            "No selected meals available for recommendation."
+        );
+    }
+
     let highestMeal =
         selectedMeals[0];
 
     for (const meal of selectedMeals) {
 
-        if (
-            Number(
-                meal.dish[nutrientKey]
-            ) >
-            Number(
-                highestMeal.dish[
-                    nutrientKey
-                ]
-            )
-        ) {
+        const currentValue = Number(meal.dish?.[nutrientKey]) || 0;
+
+        const highestValue =
+            Number(highestMeal.dish?.[nutrientKey]) || 0;
+
+        if (currentValue > highestValue) {
             highestMeal = meal;
         }
     }
@@ -115,7 +120,7 @@ async function getRecommendation(nutrientResult) {
             recommendationRequired: false,
             swapAvailable: false,
             message:
-                "No assessed nutrient exceeds its guideline value."
+                "No assessed nutrient from the selected meals exceeds its guideline value."
         };
     }
 
