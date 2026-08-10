@@ -4,53 +4,52 @@ const express = require("express");
 const cors = require("cors");
 
 const assessmentRoutes = require("./routes/assessmentRoutes");
-const pool = require("./config/database");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS: only allow the deployed frontend
+app.use(
+    cors({
+        origin: "https://one-life-action-frontend.vercel.app",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"]
+    })
+);
+
+// Parse JSON request bodies
 app.use(express.json());
 
-
-// Basic backend test
+// Health check
 app.get("/", (req, res) => {
-    res.json({
+    res.status(200).json({
+        success: true,
         message: "FIT5120 backend is running"
     });
 });
 
-
-// Temporary database connection test
-app.get("/db-test", async (req, res) => {
-    try {
-
-        const [rows] = await pool.query(
-            "SELECT NOW() AS currentTime"
-        );
-
-        res.json({
-            success: true,
-            message: "Aiven MySQL connected successfully",
-            databaseTime: rows[0].currentTime
-        });
-
-    } catch (error) {
-
-        console.error("Database connection error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Database connection failed"
-        });
-    }
-});
-
-
-// Assessment API
+// Assessment APIs
 app.use("/assessment", assessmentRoutes);
 
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: "API endpoint not found"
+    });
+});
 
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error("Server error:", err.message);
+
+    res.status(500).json({
+        success: false,
+        message: "Internal server error"
+    });
+});
+
+// Start server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
